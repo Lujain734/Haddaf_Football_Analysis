@@ -14,7 +14,7 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 FILES = [
     "detect_best.pt",
     "pose_best.pt",
-    "best_ensemble_classifier.pkl",
+    "best_ensemble_classifier_NEW(02).pkl",
     "feature_scaler_lgbm.joblib",
     "label_encoder_lgbm.joblib",
 ]
