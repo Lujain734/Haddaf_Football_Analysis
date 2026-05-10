@@ -30,7 +30,7 @@ HF_REPO_ID = "lujain-721/Haddaf_New_Model"
 HF_FILES = [
     "detect_best.pt",
     "pose_best.pt",
-    "best_ensemble_classifier.pkl",
+    "best_ensemble_classifier_NEW(02).pkl",
     "feature_scaler_lgbm.joblib",
     "label_encoder_lgbm.joblib",
 ]
@@ -59,20 +59,16 @@ def download_models():
 download_models()
 
 # ================== Model Paths ==================
-DETECTION_WEIGHTS    = os.path.join(MODELS_DIR, "detect_best.pt")
-POSE_WEIGHTS         = os.path.join(MODELS_DIR, "pose_best.pt")
-CLASSIFIER_WEIGHTS   = os.path.join(MODELS_DIR, "best_ensemble_classifier.pkl")
-SCALER_PATH          = os.path.join(MODELS_DIR, "feature_scaler_lgbm.joblib")
-ENCODER_PATH         = os.path.join(MODELS_DIR, "label_encoder_lgbm.joblib")
+DETECTION_WEIGHTS  = os.path.join(MODELS_DIR, "detect_best.pt")
+POSE_WEIGHTS       = os.path.join(MODELS_DIR, "pose_best.pt")
+CLASSIFIER_WEIGHTS = os.path.join(MODELS_DIR, "best_ensemble_classifier_NEW(02).pkl")
+SCALER_PATH        = os.path.join(MODELS_DIR, "feature_scaler_lgbm.joblib")
+ENCODER_PATH       = os.path.join(MODELS_DIR, "label_encoder_lgbm.joblib")
 
 
 # ================== Routes ==================
 
 def apply_reality_logic(counts):
-    """
-    Football context post-processing layer.
-    Understands what actions realistically co-occur for a single player.
-    """
     has_dribble = counts.get('dribble', 0) > 0
     has_pass    = counts.get('pass', 0) > 0
     has_shoot   = counts.get('shoot', 0) > 0
@@ -81,18 +77,15 @@ def apply_reality_logic(counts):
 
     original = dict(counts)
 
-    # RULE 1: Header overrides everything
     if has_header:
         counts = {k: (v if k == 'header' else 0) for k, v in counts.items()}
         print(f"[REALITY LOGIC] Header detected — keeping only header. Before: {original}")
         return counts
 
-    # RULE 2: Tackle + (dribble or pass) = opponent tackle, remove tackle
     if has_tackle and (has_dribble or has_pass):
         counts['tackle'] = 0
         print(f"[REALITY LOGIC] Tackle removed (dribble/pass present = opponent tackle). Before: {original}")
 
-    # RULE 3: Tackle + only shoot = remove shoot
     has_tackle_now  = counts.get('tackle', 0) > 0
     has_shoot_now   = counts.get('shoot', 0) > 0
     has_dribble_now = counts.get('dribble', 0) > 0
@@ -192,14 +185,6 @@ def view_crops():
 
 @app.route("/analyze", methods=["POST"])
 def analyze_video():
-    """
-    Analyze a video for action counts.
-
-    Form-data fields:
-      - video  : video file
-      - x, y   : floats, NORMALIZED target coordinates (0.0 to 1.0)
-      - width, height : floats, original frame dimensions (from the iOS app)
-    """
     try:
         if "video" not in request.files:
             return jsonify({"success": False, "error": "No video file provided"}), 400
@@ -219,25 +204,20 @@ def analyze_video():
         print(f"Target normalized coords: x={x}, y={y}")
         print(f"Original dimensions: {original_width}x{original_height}")
 
-        # Working directory — reset each request
         work_dir = os.path.join(DEBUG_DIR, "current")
         if os.path.exists(work_dir):
             shutil.rmtree(work_dir, ignore_errors=True)
         os.makedirs(work_dir, exist_ok=True)
 
-        # Save uploaded video
         video_path = os.path.join(work_dir, "input_video.mp4")
         video_file.save(video_path)
         print(f"Video saved: {video_path}")
 
-        # Crops output directory
         crops_dir = os.path.join(work_dir, "crops")
         os.makedirs(crops_dir, exist_ok=True)
 
-        # Build CLI command for main.py
         main_script = os.path.join(BASE_DIR, "main.py")
 
-        # Environment: limit threads to reduce memory usage
         env_limited = dict(os.environ,
             OMP_NUM_THREADS="1",
             OPENBLAS_NUM_THREADS="1",
@@ -277,12 +257,10 @@ def analyze_video():
                 env=env_limited,
             )
 
-        # PASS 1: Run at zoom=1.3
         result = run_pipeline(1.3)
         stdout_text = result.stdout or ""
         stderr_text = result.stderr or ""
 
-        # Check for tackle signal
         tackle_signal = False
         for line in stdout_text.splitlines():
             if "'tackle':" in line:
@@ -328,7 +306,6 @@ def analyze_video():
                 "return_code": result.returncode
             }), 500
 
-        # Parse action counts from stdout ("dribble = N")
         action_counts = {}
         for line in stdout_text.strip().splitlines():
             if "=" in line:
@@ -345,7 +322,6 @@ def analyze_video():
             action_counts = {"dribble": 0, "pass": 0, "shoot": 0, "header": 0, "tackle": 0}
             print("No action counts parsed, defaulting to zeros.")
 
-        # Count saved crops
         crop_count = len([
             f for f in os.listdir(crops_dir)
             if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp', '.webp'))
@@ -353,7 +329,6 @@ def analyze_video():
 
         print(f"Total crops: {crop_count}")
 
-        # Apply football reality logic
         action_counts = apply_reality_logic(action_counts)
 
         base_url = request.host_url.rstrip("/")
