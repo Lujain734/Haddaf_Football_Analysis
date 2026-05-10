@@ -30,7 +30,7 @@ HF_REPO_ID = "lujain-721/Haddaf_New_Model"
 HF_FILES = [
     "detect_best.pt",
     "pose_best.pt",
-    "best_ensemble_classifier_NEW(02).pkl",
+    "best_ensemble_classifier_final.pkl",
     "feature_scaler_lgbm.joblib",
     "label_encoder_lgbm.joblib",
 ]
@@ -61,7 +61,7 @@ download_models()
 # ================== Model Paths ==================
 DETECTION_WEIGHTS  = os.path.join(MODELS_DIR, "detect_best.pt")
 POSE_WEIGHTS       = os.path.join(MODELS_DIR, "pose_best.pt")
-CLASSIFIER_WEIGHTS = os.path.join(MODELS_DIR, "best_ensemble_classifier_NEW(02).pkl")
+CLASSIFIER_WEIGHTS = os.path.join(MODELS_DIR, "best_ensemble_classifier_final.pkl")
 SCALER_PATH        = os.path.join(MODELS_DIR, "feature_scaler_lgbm.joblib")
 ENCODER_PATH       = os.path.join(MODELS_DIR, "label_encoder_lgbm.joblib")
 
