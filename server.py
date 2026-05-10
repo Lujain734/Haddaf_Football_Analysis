@@ -30,7 +30,6 @@ HF_REPO_ID = "lujain-721/Haddaf_New_Model"
 HF_FILES = [
     "detect_best.pt",
     "pose_best.pt",
-    "best_ensemble_classifier_final.pkl",
     "feature_scaler_lgbm.joblib",
     "label_encoder_lgbm.joblib",
 ]
@@ -57,6 +56,13 @@ def download_models():
 
 # Download models at startup
 download_models()
+
+# Train classifier if not exists
+CLASSIFIER_PKL = os.path.join(MODELS_DIR, "best_ensemble_classifier_final.pkl")
+if not os.path.exists(CLASSIFIER_PKL):
+    print("Classifier not found — training on server...")
+    from train_on_server import train
+    train()
 
 # ================== Model Paths ==================
 DETECTION_WEIGHTS  = os.path.join(MODELS_DIR, "detect_best.pt")
