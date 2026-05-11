@@ -13,7 +13,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.utils.class_weight import compute_class_weight
 from lightgbm import LGBMClassifier
-from huggingface_hub import hf_hub_download
+from huggingface_hub import hf_hub_download, HfApi
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -48,15 +48,15 @@ def train():
     # Build ensemble
     rf = Pipeline([
         ('s', StandardScaler()),
-        ('c', RandomForestClassifier(n_estimators=500, class_weight=cw, random_state=42, n_jobs=-1, min_samples_leaf=2))
+        ('c', RandomForestClassifier(n_estimators=200, class_weight=cw, random_state=42, n_jobs=-1, min_samples_leaf=2))
     ])
     lgbm = Pipeline([
         ('s', StandardScaler()),
-        ('c', LGBMClassifier(n_estimators=500, class_weight=cw, random_state=42, n_jobs=-1, verbose=-1, num_leaves=63, min_child_samples=5))
+        ('c', LGBMClassifier(n_estimators=200, class_weight=cw, random_state=42, n_jobs=-1, verbose=-1, num_leaves=63, min_child_samples=5))
     ])
     gb = Pipeline([
         ('s', StandardScaler()),
-        ('c', GradientBoostingClassifier(n_estimators=300, random_state=42, min_samples_leaf=2, max_depth=5))
+        ('c', GradientBoostingClassifier(n_estimators=100, random_state=42, min_samples_leaf=2, max_depth=5))
     ])
 
     ensemble = VotingClassifier(
@@ -70,6 +70,24 @@ def train():
 
     joblib.dump(ensemble, OUT_MODEL)
     print(f"Saved: {OUT_MODEL}")
+
+    # Upload to Hugging Face automatically
+    hf_token = os.environ.get("HF_TOKEN")
+    if hf_token:
+        try:
+            api = HfApi()
+            api.upload_file(
+                path_or_fileobj=OUT_MODEL,
+                path_in_repo="best_ensemble_classifier_final.pkl",
+                repo_id=HF_REPO_ID,
+                token=hf_token,
+            )
+            print("✅ Uploaded to Hugging Face successfully!")
+        except Exception as e:
+            print(f"⚠️ Upload to HF failed: {e}")
+    else:
+        print("⚠️ HF_TOKEN not set — skipping upload")
+
     print("=" * 60)
 
 if __name__ == "__main__":
