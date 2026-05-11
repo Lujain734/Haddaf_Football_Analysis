@@ -57,12 +57,21 @@ def download_models():
 # Download models at startup
 download_models()
 
-# Train classifier if not exists
+# Try to download classifier from HF first, otherwise train on server
 CLASSIFIER_PKL = os.path.join(MODELS_DIR, "best_ensemble_classifier_final.pkl")
 if not os.path.exists(CLASSIFIER_PKL):
-    print("Classifier not found — training on server...")
-    from train_on_server import train
-    train()
+    try:
+        print("Trying to download classifier from Hugging Face...")
+        hf_hub_download(
+            repo_id="lujain-721/Haddaf_New_Model",
+            filename="best_ensemble_classifier_final.pkl",
+            local_dir=MODELS_DIR,
+        )
+        print("Classifier downloaded from Hugging Face!")
+    except Exception:
+        print("Not found on HF — training on server...")
+        from train_on_server import train
+        train()
 
 # ================== Model Paths ==================
 DETECTION_WEIGHTS  = os.path.join(MODELS_DIR, "detect_best.pt")
