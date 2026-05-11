@@ -48,15 +48,15 @@ def train():
     # Build ensemble
     rf = Pipeline([
         ('s', StandardScaler()),
-        ('c', RandomForestClassifier(n_estimators=200, class_weight=cw, random_state=42, n_jobs=-1, min_samples_leaf=2))
+        ('c', RandomForestClassifier(n_estimators=500, class_weight=cw, random_state=42, n_jobs=-1, min_samples_leaf=2))
     ])
     lgbm = Pipeline([
         ('s', StandardScaler()),
-        ('c', LGBMClassifier(n_estimators=200, class_weight=cw, random_state=42, n_jobs=-1, verbose=-1, num_leaves=63, min_child_samples=5))
+        ('c', LGBMClassifier(n_estimators=500, class_weight=cw, random_state=42, n_jobs=-1, verbose=-1, num_leaves=63, min_child_samples=5))
     ])
     gb = Pipeline([
         ('s', StandardScaler()),
-        ('c', GradientBoostingClassifier(n_estimators=100, random_state=42, min_samples_leaf=2, max_depth=5))
+        ('c', GradientBoostingClassifier(n_estimators=300, random_state=42, min_samples_leaf=2, max_depth=5))
     ])
 
     ensemble = VotingClassifier(
